@@ -1,0 +1,7 @@
+let accumulate =
+	fun (func, initial, xs) ->
+		if xs == [] then initial
+		else func(#xs, accumulate(func, initial, ~xs))
+in
+let foldr = accumulate in
+	foldr(fun (x, y) -> x + y, 0, [1,2,3,4])

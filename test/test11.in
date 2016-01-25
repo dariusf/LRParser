@@ -1,0 +1,8 @@
+let pair =
+	fun (x, y) ->
+		fun (p) -> if p = 0 then x else y
+in
+let head = fun (p) -> p(0) in
+let tail = fun (p) -> p(1) in
+let a = pair(1, pair(2, pair(3, []))) in
+	head(tail(a))

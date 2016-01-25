@@ -1,0 +1,33 @@
+.node {
+  cursor: pointer;
+}
+
+.node circle {
+  fill: #fff;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.node text {
+  font: 14px consolas;
+}
+
+.link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 1.5px;
+}
+
+.gui {
+	position: fixed;
+}
+
+#expand {
+	left: 15px;
+	top: 15px;
+}
+
+#collapse {
+	left: 115px;
+	top: 15px;
+}

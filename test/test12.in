@@ -1,0 +1,10 @@
+let a =
+	fun(x) ->
+		fun(y) ->
+			fun(z) ->
+				x + y + z
+in
+let b = a(1) in
+let c = b(2) in
+let d = c(3) in
+	d

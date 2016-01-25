@@ -1,0 +1,216 @@
+// JavaCup specification for a simple expression evaluator (w/ actions)
+
+package syntax;
+
+import java_cup.runtime.*;
+import java.util.*;
+
+parser code {:
+
+
+   scanner lexer;
+
+   public parser(scanner lexer) {
+     super(lexer);
+     this.lexer = lexer;
+   }
+
+  /* Change the method report_error so it will display the line
+      and column of where the error occurred in the input as well as the reason
+      for the error which is passed into the method in the String 'message'.  */
+   public void report_error(String message, Object info) {
+     /* Create a StringBuffer called 'm' with the string 'Error' in it. */
+     StringBuffer m = new StringBuffer("Error");
+
+     /* Check if the information passed to the method is the same type as the
+        type java_cup.runtime.Symbol. */
+     if (info instanceof java_cup.runtime.Symbol) {
+
+       /* Declare a java_cup.runtime.Symbol object 's' with the information in the
+           object info that is being typecasted as a java_cup.runtime.Symbol object. */
+       java_cup.runtime.Symbol s = ((java_cup.runtime.Symbol) info);
+
+       /* Check if the line number in the input is greater or equal to zero. */
+       if (s.left >= 0) {
+
+         /* Add to the end of the StringBuffer error message the line number of
+            the error in the input. */
+         m.append(" in line "+(s.left+1));
+
+         /* Check if the column number in the input is greater or equal to
+            zero. */
+         if (s.right >= 0)
+
+           /* Add to the end of the StringBuffer error message the column number
+              of the error in the input. */
+           m.append(", column "+(s.right+1));
+         }
+     }
+
+     /* Add to the end of the StringBuffer error message created in this
+        method the message that was passed into this method. */
+     m.append(" : "+message);
+
+     /* Print the contents of the StringBuffer 'm', which contains an error
+        message out on a line. */
+     System.out.println(m);
+   }
+
+   /* Change the method report_fatal_error so when it reports a fatal error it
+      will display the line and column number of where the fatal error
+      occurred in the input as well as the reason for the fatal error which is
+      passed into the method in the object 'message' and then exit.*/
+   public void report_fatal_error(String message, Object info) {
+     report_error(message, info);
+     System.exit(1);
+     }
+
+ :};
+ /*  Return to Using CUP  */
+
+/* Use the scanner created with JFlex  */
+scan with {: return lexer.next_token(); :};
+
+/* Terminals (tokens returned by the scanner). */
+terminal           LET, IN;
+terminal           IF, THEN, ELSE;
+terminal           FUNCTION, ARROW;
+terminal           APPEND, CONS, HEAD, TAIL, EMPTYLIST, LSQBR, RSQBR;
+terminal           COMMA, LPAREN, RPAREN;
+terminal           PLUS, MINUS, TIMES, DIV, UMINUS;
+terminal           LESS, GREATER, LEQ, GEQ;
+terminal           AND, OR, NOT, TRUE, FALSE;
+terminal           EQUALEQUAL, EQUAL;
+terminal String    IDENTIFIER;
+terminal Double    NUMBER;
+terminal String    STRING;
+
+/* Non terminals */
+non terminal Expression expression;
+non terminal Vector<Expression> nonEmptyExpressionList;
+non terminal Vector<String> nonEmptyIdentifierList;
+non terminal Vector<String> identifierList;
+
+/* Precedences */
+/* lowest precedence */
+precedence left OR;
+precedence left AND;
+precedence nonassoc NOT;
+precedence nonassoc EQUALEQUAL, EQUAL, GREATER, LESS, GEQ, LEQ;
+precedence right APPEND;
+precedence right CONS;
+precedence left PLUS, MINUS;
+precedence left TIMES, DIV;
+precedence nonassoc UMINUS, HEAD, TAIL;
+precedence nonassoc LPAREN, RPAREN;
+/* highest precedence */
+
+/* The grammar */
+
+expression ::=
+           NUMBER:x
+           {: RESULT = new NumberConstant(x.doubleValue()); :}
+         | STRING:x
+           {: RESULT = new StringConstant(x); :}
+         | TRUE
+           {: RESULT = new BooleanConstant(true); :}
+         | FALSE
+           {: RESULT = new BooleanConstant(false); :}
+         | EMPTYLIST
+           {: RESULT = new EmptyList(); :}
+         // | UNDEFINED
+         //   {: RESULT = new UndefinedValue(); :}
+         | IDENTIFIER:s
+           {: RESULT = new Variable(s); :}
+
+         | NOT expression:e
+           {: RESULT = new UnaryPrimitiveApplication("!",e); :}
+         | MINUS expression:e
+           {: RESULT = new UnaryPrimitiveApplication("-",e); :}
+           %prec UMINUS
+
+         | HEAD expression:e
+           {: RESULT = new UnaryPrimitiveApplication("#",e); :}
+         | TAIL expression:e
+           {: RESULT = new UnaryPrimitiveApplication("~",e); :}
+
+         | expression:e1 CONS expression:e2
+           {: RESULT = new BinaryPrimitiveApplication(":",e1,e2); :}
+         | expression:e1 APPEND expression:e2
+           {: RESULT = new BinaryPrimitiveApplication("@",e1,e2); :}
+
+         | expression:e1 PLUS expression:e2
+           {: RESULT = new BinaryPrimitiveApplication("+",e1,e2); :}
+         | expression:e1 MINUS expression:e2
+           {: RESULT = new BinaryPrimitiveApplication("-",e1,e2); :}
+         | expression:e1 TIMES expression:e2
+           {: RESULT = new BinaryPrimitiveApplication("*",e1,e2); :}
+         | expression:e1 DIV expression:e2
+           {: RESULT = new BinaryPrimitiveApplication("/",e1,e2); :}
+         // | expression:e1 MOD expression:e2
+         //   {: RESULT = new BinaryPrimitiveApplication("%",e1,e2); :}
+         | expression:e1 AND expression:e2
+           {: RESULT = new BinaryPrimitiveApplication("&",e1,e2); :}
+         | expression:e1 OR expression:e2
+           {: RESULT = new BinaryPrimitiveApplication("|",e1,e2); :}
+         | expression:e1 GREATER expression:e2
+           {: RESULT = new BinaryPrimitiveApplication(">",e1,e2); :}
+         | expression:e1 LESS expression:e2
+           {: RESULT = new BinaryPrimitiveApplication("<",e1,e2); :}
+         | expression:e1 EQUALEQUAL expression:e2
+           {: RESULT = new BinaryPrimitiveApplication("==",e1,e2); :}
+         | expression:e1 EQUAL expression:e2
+           {: RESULT = new BinaryPrimitiveApplication("=",e1,e2); :}
+         // | expression:e1 NOTEQUALEQUAL expression:e2
+         //   {: RESULT = new BinaryPrimitiveApplication("!==",e1,e2); :}
+         | expression:e1 LEQ expression:e2
+           {: RESULT = new BinaryPrimitiveApplication("<=",e1,e2); :}
+         | expression:e1 GEQ expression:e2
+           {: RESULT = new BinaryPrimitiveApplication(">=",e1,e2); :}
+
+         | IF expression:e1 THEN expression:e2 ELSE expression:e3 
+           {: RESULT = new IfExpression(e1, e2, e3); :}
+           %prec IF
+
+         | LET IDENTIFIER:id EQUAL expression:e1 IN expression:e2
+           {: RESULT = new LetExpression(id, e1, e2); :}
+           %prec LET
+
+         | LSQBR nonEmptyExpressionList:es RSQBR
+           {: RESULT = new PairConstant(es); :}
+
+         | FUNCTION LPAREN identifierList:ids RPAREN ARROW expression:body
+           {: RESULT = new FunctionExpression(ids, body); :}
+
+         | IDENTIFIER:id LPAREN nonEmptyExpressionList:es RPAREN
+           {: RESULT = new Application(id, es); :}
+         | IDENTIFIER:id LPAREN RPAREN
+           {: RESULT = new Application(id, new Vector<Expression>()); :} 
+
+         | LPAREN expression:e RPAREN
+           {: RESULT = e; :}
+         ;
+
+nonEmptyIdentifierList ::= 
+           IDENTIFIER:i
+           {: Vector<String> is = new Vector<String>(); is.insertElementAt(i,0); RESULT = is; :}
+         | IDENTIFIER:i COMMA nonEmptyIdentifierList:is
+           {: is.insertElementAt(i,0); RESULT = is; :}
+         ;
+
+identifierList
+    ::= 
+           nonEmptyIdentifierList:is
+           {: RESULT = is; :}
+     | /* NOTHING */
+           {: RESULT = new Vector<String>(); :}
+       ;
+
+nonEmptyExpressionList ::=
+       expression:e 
+       {: Vector<Expression> es = new Vector<Expression>();
+          es.add(e); RESULT = es;
+       :} 
+     |  nonEmptyExpressionList:es COMMA expression:e
+       {: es.add(e); RESULT = es; :}
+        ;
